@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <link href="css/analysis.css" rel="stylesheet" type="text/css">
+    <script src="./script/vue.min.js"></script>
+    <script src="./script/vue-resource.min.js"></script>
+</head>
+<body>
+    <!--测试解析 20170915 snowsmell Vue改写-->
+    <div class="analysisBox" id="app">
+        <!--简答题-->
+        <div class="queitem">
+            <h3>第{{res.QuesNo}}题 {{questype}}</h3>
+            <!--题目内容-->
+            <article v-html="res.QuesContent">
+            </article>
+            <!--正确率-->
+            <div class="accuracy">
+                <i class='icon-cc03'></i>平均正确率：<span>{{res.QuesRightPercent}}</span>
+            </div>
+            <!--选项-->
+            <section class="dx shAn">
+                <h4>你的答案</h4>
+                <div class="option">
+                    <div class="shAnsel">
+                        <p v-html="res.QuesUserAnswer">
+                        </p>
+                        <div class="img">
+                            <ul>
+                                <li v-for='(value,index) in res.QuesUserAnswerImgs'>
+                                    <img :src="value"  @click="picShow(index,event)">
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <div class="analysis">
+                <div class="analy01">
+                    <h3><i class="icon-cc01"></i>解析</h3>
+                    <p>{{res.QuesAnalysisList[0].AnalysisContent}}</p>
+                </div>
+            </div>
+        </div>
+        <div class="zewrap" v-show=" !this.isShow ">
+            <section>
+                <a href="javascript:;" class="z-cha" @click="picClose"><i class='icon-gf-wrong32'></i></a>
+                <img :src="this.showimg">
+                <a href="javascript:;" class="z-prev" @click="picPrev" ><i class="icon-chevron_left2"></i></a>
+                <a href="javascript:;" class="z-next" @click="picNext"><i class='icon-chevron_right22'></i></a>
+            </section>
+        </div>
+    </div>
+
+    <!-- 测试解析 end -->
+</body>
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            res: '',   
+            apiUrl:"http://mapi.gfedu.cn/api/exam/getquesanalysisinfo/v500",
+            showimg:'',
+            isShow:1,     
+            picindex:''
+        },
+        methods: {
+            picShow:function(num,event){
+                this.isShow= 0
+                this.showimg=event.target.src 
+                this.picindex=num
+                console.log(this.picindex)               
+            },
+            picNext:function(){
+                if(this.picindex+1 <this.res.QuesUserAnswerImgs.length){
+                    this.showimg= this.res.QuesUserAnswerImgs[++this.picindex]
+                    console.log('切换了next')
+                }
+            },
+            picPrev:function(){
+                if(this.picindex-1 > -1){
+                    this.showimg= this.res.QuesUserAnswerImgs[--this.picindex]
+                    console.log('切换了prev')
+                }
+            },
+            picClose:function(){
+                this.isShow= 1
+            }
+        },
+        computed: {
+            questype: function () {
+                //题目类型设置
+                var name=''
+                switch (this.res.QuesType) {
+                    case 1:
+                        name = "判断题";
+                        break;
+                    case 2:
+                        name = "单选题";
+                        break;
+                    case 3:
+                        name = "多选题";
+                        break;
+                    case 4:
+                        name = "填空题";
+                        break;
+                    case 5:
+                        name = "计算题";
+                        break;
+                    case 6:
+                        name = "简答题";
+                        break;
+                    case 7:
+                        name = "论述题";
+                        break;
+                    case 8:
+                        name = "综合题";
+                        break;
+                    case 9:
+                        name = "名词解释";
+                }
+                return name
+            },
+            infodata: function () {
+                //参数获取
+                var moniGet = location.search || "?userid=123898&paperid=58&quesid=186"
+                function GetQueryString(name) {
+                    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+                    var r = moniGet.substr(1).match(reg);
+                    if (r != null) return unescape(r[2]);
+                    return null;
+                }
+                var userid = GetQueryString('userid'),
+                    paperid = GetQueryString('paperid'),
+                    quesid = GetQueryString('quesid')
+
+                var data = {
+                    "UserId": userid,
+                    "PaperId": paperid,
+                    "QuesId": quesid
+                };
+                return data
+            }
+        },
+        created: function () {
+            //vue-resource 的写法 start
+            Vue.http.options.emulateJSON = true
+            var self = this
+            this.$http.post(self.apiUrl,self.infodata).then(function(res){                
+                self.res = res.body.Body
+                console.log(self.res)
+            },function(err){
+                console.log('vue-resouce 也有毒')
+            })
+            //vue-resource 的写法 end
+            
+        }
+    })
+</script>
+</html>
